@@ -405,7 +405,7 @@
 
         <!-- dependency-related properties -->
         <hadoop.version>2.7.3</hadoop.version>
-        <hive.version>1.2.1</hive.version>
+        <hive.version>2.3.4</hive.version>
         <spring.version>4.3.18.RELEASE</spring.version>
         <spring.boot.version>1.5.15.RELEASE</spring.boot.version>
         <spring.data.version>1.11.14.RELEASE</spring.data.version>
