@@ -1,0 +1,44 @@
+<workflow-app name="build-sj-infra-metric" xmlns="uri:oozie:workflow:0.5">
+
+    <global>
+        <job-tracker>${cluster.resourcemanager}</job-tracker>
+        <name-node>hdfs://${cluster.namenode}</name-node>
+    </global>
+
+    <start to="build-fact-metric"/>
+
+    <action name="build-fact-metric">
+        <sub-workflow>
+            <app-path>${app.hdfs.home}/lib/sj-infra-metric-daily-build/sub-workflow/fact-metric.xml</app-path>
+            <propagate-configuration/>
+        </sub-workflow>
+        <ok to="build-sum-metric-avg"/>
+        <error to="kill"/>
+    </action>
+
+    <action name="build-sum-metric-avg">
+        <sub-workflow>
+            <app-path>${app.hdfs.home}/lib/sj-infra-metric-daily-build/sub-workflow/sum-metric-avg.xml</app-path>
+            <propagate-configuration/>
+        </sub-workflow>
+        <ok to="build-wide-metric-avg"/>
+        <error to="kill"/>
+    </action>
+
+    <action name="build-wide-metric-avg">
+        <sub-workflow>
+            <app-path>${app.hdfs.home}/lib/sj-infra-metric-daily-build/sub-workflow/wide-metric-avg.xml</app-path>
+            <propagate-configuration/>
+        </sub-workflow>
+        <ok to="end"/>
+        <error to="kill"/>
+    </action>
+
+    <kill name="kill">
+        <message>Action failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+
+    <end name="end"/>
+
+</workflow-app>
+

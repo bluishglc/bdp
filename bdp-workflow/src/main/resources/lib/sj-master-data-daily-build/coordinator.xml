@@ -1,0 +1,58 @@
+<coordinator-app name="sj-master-data-daily-build" frequency="${coord:days(1)}"
+                 start="${startTime}" end="${endTime}" timezone="Asia/Shanghai"
+                 xmlns="uri:oozie:coordinator:0.1">
+
+    <datasets>
+        <dataset name="ds-bdp-master-app" frequency="${coord:days(1)}"
+                 initial-instance="2018-01-02T00:00+0800" timezone="Asia/Shanghai">
+            <uri-template>${app.hdfs.user.home}/done-flags/${YEAR}-${MONTH}-${DAY}/ds-bdp-master/app</uri-template>
+        </dataset>
+        <dataset name="ds-bdp-master-server" frequency="${coord:days(1)}"
+                 initial-instance="2018-01-02T00:00+0800" timezone="Asia/Shanghai">
+            <uri-template>${app.hdfs.user.home}/done-flags/${YEAR}-${MONTH}-${DAY}/ds-bdp-master/server</uri-template>
+        </dataset>
+        <dataset name="ds-bdp-master-metric-index" frequency="${coord:days(1)}"
+                 initial-instance="2018-01-02T00:00+0800" timezone="Asia/Shanghai">
+            <uri-template>${app.hdfs.user.home}/done-flags/${YEAR}-${MONTH}-${DAY}/ds-bdp-master/metric-index</uri-template>
+        </dataset>
+        <dataset name="ds-bdp-master-metric-threshold" frequency="${coord:days(1)}"
+                 initial-instance="2018-01-02T00:00+0800" timezone="Asia/Shanghai">
+            <uri-template>${app.hdfs.user.home}/done-flags/${YEAR}-${MONTH}-${DAY}/ds-bdp-master/metric-threshold</uri-template>
+        </dataset>
+    </datasets>
+
+    <input-events>
+        <data-in name="ds-bdp-master-app-input" dataset="ds-bdp-master-app">
+            <instance>${coord:current(-1)}</instance>
+        </data-in>
+        <data-in name="ds-bdp-master-server-input" dataset="ds-bdp-master-server">
+            <instance>${coord:current(-1)}</instance>
+        </data-in>
+        <data-in name="ds-bdp-master-metric-index-input" dataset="ds-bdp-master-metric-index">
+            <instance>${coord:current(-1)}</instance>
+        </data-in>
+        <data-in name="ds-bdp-master-metric-threshold-input" dataset="ds-bdp-master-metric-threshold">
+            <instance>${coord:current(-1)}</instance>
+        </data-in>
+    </input-events>
+
+    <action>
+        <workflow>
+            <app-path>${app.hdfs.home}/lib/sj-master-data-daily-build/workflow.xml</app-path>
+            <configuration>
+                <property>
+                    <name>START_TIME</name>
+                    <value>${coord:dateOffset(coord:nominalTime(), -1, 'DAY')}</value>
+                </property>
+                <property>
+                    <name>END_TIME</name>
+                    <value>${coord:dateOffset(coord:nominalTime(), 0, 'DAY')}</value>
+                </property>
+                <property>
+                    <name>DATE_FLAG</name>
+                    <value>${coord:formatTime(coord:dateOffset(coord:nominalTime(), -1, 'DAY'), "yyyy-MM-dd")}</value>
+                </property>
+            </configuration>
+        </workflow>
+    </action>
+</coordinator-app>

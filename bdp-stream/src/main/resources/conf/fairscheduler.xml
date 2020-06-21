@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<allocations>
+    <pool name="pool_persist_cpu_usage">
+        <schedulingMode>FAIR</schedulingMode>
+        <weight>1</weight>
+        <minShare>0</minShare>
+    </pool>
+    <pool name="pool_persist_mem_used">
+        <schedulingMode>FAIR</schedulingMode>
+        <weight>1</weight>
+        <minShare>0</minShare>
+    </pool>
+    <pool name="pool_evaluate_cpu_usage">
+        <schedulingMode>FAIR</schedulingMode>
+        <weight>1</weight>
+        <minShare>0</minShare>
+    </pool>
+    <pool name="pool_evaluate_mem_used">
+        <schedulingMode>FAIR</schedulingMode>
+        <weight>1</weight>
+        <minShare>0</minShare>
+    </pool>
+    <pool name="pool_persist_alert">
+        <schedulingMode>FAIR</schedulingMode>
+        <weight>1</weight>
+        <minShare>0</minShare>
+    </pool>
+    <pool name="pool_evaluate_alert">
+        <schedulingMode>FAIR</schedulingMode>
+        <weight>1</weight>
+        <minShare>0</minShare>
+    </pool>
+</allocations>

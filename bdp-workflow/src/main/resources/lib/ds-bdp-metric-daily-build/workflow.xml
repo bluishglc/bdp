@@ -1,0 +1,26 @@
+<workflow-app name="build-ds-bdp-metric" xmlns="uri:oozie:workflow:0.5">
+
+    <global>
+        <job-tracker>${cluster.resourcemanager}</job-tracker>
+        <name-node>hdfs://${cluster.namenode}</name-node>
+    </global>
+
+    <start to="build-metric"/>
+
+    <action name="build-metric">
+        <sub-workflow>
+            <app-path>${app.hdfs.home}/lib/ds-bdp-metric-daily-build/sub-workflow/metric.xml</app-path>
+            <propagate-configuration/>
+        </sub-workflow>
+        <ok to="end"/>
+        <error to="kill"/>
+    </action>
+
+    <kill name="kill">
+        <message>Action failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+
+    <end name="end"/>
+
+</workflow-app>
+

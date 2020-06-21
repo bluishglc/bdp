@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath:bdp-collect.properties</value>
+            </list>
+        </property>
+    </bean>
+    <bean id="hikariConfig" class="com.zaxxer.hikari.HikariConfig">
+        <property name="driverClassName" value="${bdp.metric.jdbc.driverClassName}"/>
+        <property name="jdbcUrl" value="${bdp.metric.jdbc.url}"/>
+        <property name="username" value="${bdp.metric.jdbc.username}"/>
+        <property name="password" value="${bdp.metric.jdbc.password}"/>
+    </bean>
+    <bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
+        <constructor-arg ref="hikariConfig" />
+    </bean>
+    <bean id="sql" class="org.apache.camel.component.sql.SqlComponent">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+    <bean id="kafka" class="org.apache.camel.component.kafka.KafkaComponent">
+        <property name="brokers" value="${kafka.brokers}"/>
+        <!--<property name="keySerializerClass" value="class org.apache.kafka.common.serialization.ByteArrayDeserializer"/>-->
+    </bean>
+    <bean id="dateFormatter" class="java.text.SimpleDateFormat">
+        <constructor-arg name="pattern" value="yyyy-MM-dd HH:mm:ss"/>
+    </bean>
+    <bean id="dateShiftProcessor" class="com.github.bdp.collect.processors.DateShiftProcessor"/>
+    <bean id="memWave1DateParamQueue" class="java.util.concurrent.LinkedBlockingQueue" destroy-method="clear"/>
+    <bean id="memWave2DateParamQueue" class="java.util.concurrent.LinkedBlockingQueue" destroy-method="clear"/>
+    <bean id="alertDateParamQueue" class="java.util.concurrent.LinkedBlockingQueue" destroy-method="clear"/>
+
+    <camelContext xmlns="http://camel.apache.org/schema/spring">
+
+        <propertyPlaceholder id="placeholder" location="classpath:bdp-collect.properties"/>
+
+        <!-- normal case: cpu usage metrics collecting -->
+
+        <route id="cpuCollectingJob">
+            <from uri="timer:cpuCollectingTimer?period={{job.cpu.period}}"/>
+            <to uri="bean:dateFormatter?method=format(${header.firedTime})"/>
+            <log message="Job Name: cpuCollectingJob, Start Time: ${in.body}"/>
+            <setHeader headerName="timestamp">
+                <simple>${in.body}</simple>
+            </setHeader>
+            <to uri="sql:{{job.cpu.sql}}"/>
+            <log message="SQL Returned Results: ${in.body}"/>
+            <split>
+                <simple>${in.body}</simple>
+                <log message="Split Message: ${in.body}"/>
+                <marshal>
+                    <json library="Jackson"/>
+                </marshal>
+                <setHeader headerName="kafka.KEY">
+                    <simple>{{kafka.prefix.cpu.usage}}|${random(100)}</simple>
+                </setHeader>
+                <to uri="kafka:{{kafka.topic.cpuUsage}}"/>
+            </split>
+        </route>
+
+        <!-- query daley case: alert collecting -->
+
+        <route id="alertSchedulingJob">
+            <from uri="timer:alertSchedulingTimer?period={{job.alert.period}}&amp;delay=6s"/>
+            <to uri="bean:dateFormatter?method=format(${header.firedTime})"/>
+            <log message="Job Name: alertSchedulingJob, Scheduled Time: ${in.body}"/>
+            <to uri="bean:alertDateParamQueue?method=put(${in.body})"/>
+        </route>
+
+        <route id="alertExecutingJob">
+            <from uri="timer:alertExecutingTimer?delay=-1"/>
+            <to uri="bean:alertDateParamQueue?method=take()"/>
+            <log message="Job Name: alertExecutingJob, Executing Time: ${in.body}"/>
+            <setHeader headerName="timestamp">
+                <simple>${in.body}</simple>
+            </setHeader>
+            <!-- delay for a while to simulate sql executing elapsed time -->
+            <delay>
+                <simple>${random(10000)}</simple>
+            </delay>
+            <to uri="sql:{{job.alert.sql}}"/>
+            <split>
+                <simple>${body}</simple>
+                <marshal>
+                    <json library="Jackson"/>
+                </marshal>
+                <setHeader headerName="kafka.KEY">
+                    <simple>{{kafka.prefix.alert}}|${random(100)}</simple>
+                </setHeader>
+                <to uri="kafka:{{kafka.topic.alert}}"/>
+            </split>
+        </route>
+
+        <!-- data landing daley case: mem free metrics collecting -->
+
+        <route id="memWave1SchedulingJob">
+            <from uri="timer:memWave1SchedulingTimer?period={{job.mem.wave1.period}}&amp;delay=2s"/>
+            <to uri="bean:dateFormatter?method=format(${header.firedTime})"/>
+            <log message="Job Name: memWave1SchedulingJob, Scheduled Time: ${in.body}"/>
+            <to uri="bean:memWave1DateParamQueue?method=put(${in.body})"/>
+        </route>
+
+        <route id="memWave1ExecutingJob">
+            <from uri="timer:memExecutingTimer?delay=-1"/>
+            <to uri="bean:memWave1DateParamQueue?method=take()"/>
+            <log message="Job Name: memWave1ExecutingJob, Executing Time: ${in.body}"/>
+            <setHeader headerName="timestamp">
+                <simple>${in.body}</simple>
+            </setHeader>
+            <to uri="sql:{{job.mem.sql}}"/>
+            <split>
+                <simple>${body}</simple>
+                <marshal>
+                    <json library="Jackson"/>
+                </marshal>
+                <setHeader headerName="kafka.KEY">
+                    <simple>{{kafka.prefix.mem.used}}|${random(100)}</simple>
+                </setHeader>
+                <to uri="kafka:{{kafka.topic.memUsed}}"/>
+            </split>
+        </route>
+
+        <route id="memWave2SchedulingJob">
+            <from uri="timer:memWave2SchedulingTimer?period={{job.mem.wave2.period}}&amp;delay=4s"/>
+            <setHeader headerName="offset">
+                <simple>{{job.mem.wave2.offset}}</simple>
+            </setHeader>
+            <process ref="dateShiftProcessor"/>
+            <to uri="bean:dateFormatter?method=format(${header.shiftedTime})"/>
+            <log message="Job Name: memWave2ScheduleJob, Scheduled Time: ${in.body}"/>
+            <to uri="bean:memWave2DateParamQueue?method=put(${in.body})"/>
+        </route>
+
+        <route id="memWave2ExecutingJob">
+            <from uri="timer:memExecutingTimer?delay=-1"/>
+            <to uri="bean:memWave2DateParamQueue?method=take()"/>
+            <log message="Job Name: memWave2ExecutingJob, Executing Time: ${in.body}"/>
+            <setHeader headerName="timestamp">
+                <simple>${in.body}</simple>
+            </setHeader>
+            <to uri="sql:{{job.mem.sql}}"/>
+            <split>
+                <simple>${body}</simple>
+                <marshal>
+                    <json library="Jackson"/>
+                </marshal>
+                <setHeader headerName="kafka.KEY">
+                    <simple>{{kafka.prefix.mem.used}}|${random(100)}</simple>
+                </setHeader>
+                <to uri="kafka:{{kafka.topic.memUsed}}"/>
+            </split>
+        </route>
+
+    </camelContext>
+</beans>

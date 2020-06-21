@@ -1,0 +1,24 @@
+<coordinator-app name="ds-bdp-master-daily-build" frequency="${coord:days(1)}"
+                 start="${startTime}" end="${endTime}" timezone="Asia/Shanghai"
+                 xmlns="uri:oozie:coordinator:0.1">
+    <action>
+        <workflow>
+            <app-path>${app.hdfs.home}/lib/ds-bdp-master-daily-build/workflow.xml</app-path>
+            <configuration>
+                <property>
+                    <name>START_TIME</name>
+                    <value>${coord:dateOffset(coord:nominalTime(), -1, 'DAY')}</value>
+                </property>
+                <property>
+                    <name>END_TIME</name>
+                    <value>${coord:dateOffset(coord:nominalTime(), 0, 'DAY')}</value>
+                </property>
+                <property>
+                    <name>DATE_FLAG</name>
+                    <value>${coord:formatTime(coord:dateOffset(coord:nominalTime(), -1, 'DAY'), "yyyy-MM-dd")}</value>
+                </property>
+            </configuration>
+        </workflow>
+    </action>
+
+</coordinator-app>

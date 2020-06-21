@@ -1,0 +1,46 @@
+<workflow-app name="build-ds-bdp-master :: metric-index :: data source -> tmp -> src -> dwh" xmlns="uri:oozie:workflow:0.5">
+
+    <start to="build-src-metric-index"/>
+
+    <action name="build-src-metric-index">
+        <ssh xmlns="uri:oozie:ssh-action:0.1">
+            <host>${bdp-dwh.ssh.host}</host>
+            <command>${bdp-dwh.app.bin.home}/src-bdp-master.sh</command>
+            <args>build-metric-index</args>
+            <args>${START_TIME}</args>
+            <args>${END_TIME}</args>
+            <capture-output/>
+        </ssh>
+        <ok to="build-dwh-metric-index"/>
+        <error to="kill"/>
+    </action>
+
+    <action name="build-dwh-metric-index">
+        <ssh xmlns="uri:oozie:ssh-action:0.1">
+            <host>${bdp-dwh.ssh.host}</host>
+            <command>${bdp-dwh.app.bin.home}/dwh-bdp-master.sh</command>
+            <args>build-metric-index</args>
+            <args>${START_TIME}</args>
+            <args>${END_TIME}</args>
+            <capture-output/>
+        </ssh>
+        <ok to="flag-done"/>
+        <error to="kill"/>
+    </action>
+
+    <action name="flag-done">
+        <fs>
+            <touchz path='hdfs://${cluster.namenode}${app.hdfs.user.home}/done-flags/${DATE_FLAG}/ds-bdp-master/metric-index/_SUCCESS'/>
+        </fs>
+        <ok to="end"/>
+        <error to="kill"/>
+    </action>
+
+    <kill name="kill">
+        <message>Action failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+
+    <end name="end"/>
+
+</workflow-app>
+

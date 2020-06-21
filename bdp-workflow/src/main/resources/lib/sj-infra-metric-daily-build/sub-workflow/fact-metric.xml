@@ -1,0 +1,33 @@
+<workflow-app name="build-sj-infra-metric :: fact-metric" xmlns="uri:oozie:workflow:0.5">
+
+    <start to="build-fact-metric"/>
+
+    <action name="build-fact-metric">
+        <ssh xmlns="uri:oozie:ssh-action:0.1">
+            <host>${bdp-dwh.ssh.host}</host>
+            <command>${bdp-dwh.app.bin.home}/dmt-infra-metric.sh</command>
+            <args>build-fact-metric</args>
+            <args>${START_TIME}</args>
+            <args>${END_TIME}</args>
+            <capture-output/>
+        </ssh>
+        <ok to="flag-done"/>
+        <error to="kill"/>
+    </action>
+
+    <action name="flag-done">
+        <fs>
+            <touchz path='hdfs://${cluster.namenode}${app.hdfs.user.home}/done-flags/${DATE_FLAG}/sj-infra-metric/fact-metric/_SUCCESS'/>
+        </fs>
+        <ok to="end"/>
+        <error to="kill"/>
+    </action>
+
+    <kill name="kill">
+        <message>Action failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+
+    <end name="end"/>
+
+</workflow-app>
+

@@ -1,0 +1,53 @@
+<workflow-app name="build-ds-bdp-master" xmlns="uri:oozie:workflow:0.5">
+
+    <global>
+        <job-tracker>${cluster.resourcemanager}</job-tracker>
+        <name-node>hdfs://${cluster.namenode}</name-node>
+    </global>
+
+    <start to="build-app"/>
+
+    <action name="build-app">
+        <sub-workflow>
+            <app-path>${app.hdfs.home}/lib/ds-bdp-master-daily-build/sub-workflow/app.xml</app-path>
+            <propagate-configuration/>
+        </sub-workflow>
+        <ok to="build-server"/>
+        <error to="kill"/>
+    </action>
+
+    <action name="build-server">
+        <sub-workflow>
+            <app-path>${app.hdfs.home}/lib/ds-bdp-master-daily-build/sub-workflow/server.xml</app-path>
+            <propagate-configuration/>
+        </sub-workflow>
+        <ok to="build-metric-index"/>
+        <error to="kill"/>
+    </action>
+
+    <action name="build-metric-index">
+        <sub-workflow>
+            <app-path>${app.hdfs.home}/lib/ds-bdp-master-daily-build/sub-workflow/metric-index.xml</app-path>
+            <propagate-configuration/>
+        </sub-workflow>
+        <ok to="build-metric-threshold"/>
+        <error to="kill"/>
+    </action>
+
+    <action name="build-metric-threshold">
+        <sub-workflow>
+            <app-path>${app.hdfs.home}/lib/ds-bdp-master-daily-build/sub-workflow/metric-threshold.xml</app-path>
+            <propagate-configuration/>
+        </sub-workflow>
+        <ok to="end"/>
+        <error to="kill"/>
+    </action>
+
+    <kill name="kill">
+        <message>Action failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+
+    <end name="end"/>
+
+</workflow-app>
+

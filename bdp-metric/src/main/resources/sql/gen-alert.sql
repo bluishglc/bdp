@@ -1,0 +1,1 @@
+insert into `bdp_metric`.`alert` (`message`, `hostname`, `status`, `timestamp`) values ('free space warning (mb) for host disk', 'svr1001', '@status@', '@timestamp@');

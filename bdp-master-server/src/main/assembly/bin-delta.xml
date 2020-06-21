@@ -1,0 +1,37 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
+    <id>bin-delta</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>true</includeBaseDirectory>
+    <fileSets>
+        <fileSet>
+            <directory>target/classes/bin</directory>
+            <outputDirectory>./bin</outputDirectory>
+            <includes>
+                <include>*.sh</include>
+            </includes>
+            <fileMode>755</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>target/classes/conf</directory>
+            <outputDirectory>./conf</outputDirectory>
+            <includes>
+                <include>*.xml</include>
+                <include>*.sql</include>
+                <include>*.conf</include>
+                <include>*.properties</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>./lib</outputDirectory>
+            <includes>
+                <include>com.github:bdp-master-server</include>
+            </includes>
+        </dependencySet>
+    </dependencySets>
+</assembly>
