@@ -410,7 +410,7 @@
         <spring.boot.version>1.5.15.RELEASE</spring.boot.version>
         <spring.data.version>1.11.14.RELEASE</spring.data.version>
         <jedis.version>2.9.0</jedis.version>
-        <mysql.version>5.1.45</mysql.version>
+        <mysql.version>8.0.16</mysql.version>
         <spark.version>2.3.0</spark.version>
         <circe.version>0.9.3</circe.version>
         <commons.pool2.version>2.6.0</commons.pool2.version>
