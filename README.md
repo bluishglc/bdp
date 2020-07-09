@@ -17,7 +17,7 @@
 
 点击[《重磅推荐：建大数据平台太难了！给我发个工程原型吧！》](https://laurence.blog.csdn.net/article/details/106851739)了解图书详情，扫码进入京东手机购书页面！
 
-![在这里插入图片描述](https://img-blog.csdnimg.cn/2020061912530549.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2JsdWlzaGdsYw==,size_16,color_FFFFFF,t_70#pic_center)
+![大数据平台架构与原型实现：数据中台建设实战](https://img-blog.csdnimg.cn/2020061912530549.jpg)
 
 
 ---
